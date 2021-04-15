@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express=require("express");
 const bodyParser=require("body-parser");
-const request=require("request");
 const https=require("https");
 
 const app=express();
@@ -9,16 +8,17 @@ const app=express();
 
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.static('assets'));
+app.set("view engine", 'ejs');
 
 
 app.get("/",(req,res)=>{
-    res.sendFile(__dirname+"/signUp.html")
+    res.render("./pages/index");
 });
 
 app.post("/",(req,res)=>{
-    let firstName=req.body.firstname;
-    let lastName= req.body.lastname;
+    let Name=req.body.name;
     let email= req.body.email;
+    
 
     let datas ={
         members:[
@@ -26,28 +26,29 @@ app.post("/",(req,res)=>{
                 email_address: email,
                 status:"subscribed",
                 merge_fields:{
-                    FNAME:firstName,
-                    LNAME:lastName
+                    FNAME:Name
                 }
             }
         ]  
     }
+
+
     let jsonData=JSON.stringify(datas);
+    console.log(jsonData);
     let url= process.env.url;
     let option={
         auth:process.env.AUTH_KEY,
         method:"POST"
     }
-
     const sent= https.request(url, option, function(response){
         if(response.statusCode===200){
         }
         response.on("data",function(data){
             let returndata=JSON.parse(data);
             if(returndata.error_count>0){
-                res.send(`${returndata.errors.error}`);
+                res.render("./pages/fail",{error:returndata.errors[0].error_code});
             }else{
-                res.sendFile(__dirname+"/success.html");
+                res.render("./pages/sucess");
             }
         })
     })
